@@ -7,10 +7,7 @@ import './App.css'
 function App() {
   const [isDrawing, setIsDrawing] = useState(false)
   const [menuItem, setMenuItem] = useState('')
-  // const [position, setPosition] = useState({
-  //   x: '',
-  //   y: ''
-  // })
+  const [position, setPosition] = useState([])
 
   const [text, setText] = useState('')
   const canvasRef = useRef(null);
@@ -33,7 +30,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    writeText({ text: 'WELCOME HERE', x: 50, y: 50 });
+    writeText({ text: 'REACT-ARTBOARD', x: 20, y: 20 });
   }, []);
 
   const startDrawing = ({ nativeEvent }) => {
@@ -63,11 +60,13 @@ function App() {
 
   const getPosition = ({ nativeEvent }) => {
     const { offsetX, offsetY } = nativeEvent;
-    const inputText = document.createElement("textarea")
-    canvasInput.current.appendChild(inputText)
-    inputText.style.position = "absolute"
-    inputText.style.left = offsetX + 'px'
-    inputText.style.top = offsetY + 'px'
+    setPosition([...position, {x: offsetX, y: offsetY}])
+    console.log(position)
+    // const inputText = document.createElement("textarea")
+    // canvasInput.current.appendChild(inputText)
+    // inputText.style.position = "absolute"
+    // inputText.style.left = offsetX + 'px'
+    // inputText.style.top = offsetY + 'px'
     // let writenText = ''
     // writeText({ text: writenText == null ? '' : writenText, x: offsetX, y: offsetY });
   }
@@ -127,6 +126,9 @@ function App() {
   return (
     <>
       <div className="App" ref={canvasInput}>
+        {position.map((pos) => (
+          <textarea style={{ position: "absolute", left: `${pos.x}px`, top: `${pos.y}px` }} />
+        ))}
         <canvas
           id="canvas"
           onMouseDown={menuItem == 'text' ? getPosition : startDrawing}

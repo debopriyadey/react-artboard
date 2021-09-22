@@ -17,6 +17,12 @@ button {
   font-size: 20px;
 }
 
+textarea {
+  outline: none;
+  resize: none;
+  border: 1px solid rgb(182, 182, 182);
+}
+
 .menu-bar {
     background-color: #1a1a1a;
     display: inline-grid;
