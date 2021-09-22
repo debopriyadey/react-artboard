@@ -1,10 +1,41 @@
 .App {
   text-align: center;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  position: relative;
 }
 
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+}
+
+button {
+  border: none;
+  background-color: transparent;
+  padding: 10px;
+  font-size: 20px;
+}
+
+.menu-bar {
+    background-color: #1a1a1a;
+    display: inline-grid;
+    padding-block: 20px;
+    position: fixed;
+    top: 30%;
+    left: 20px;
+    border-radius: 20px;
+    background: #4199e6;
+    box-shadow:  28px 28px 33px #285f8f, -28px -28px 33px #5ad3ff;
+}
+
+.menu-item {
+  margin-inline: 20px;
+  margin-block: 5px;
+  border-radius: 8px;
+  border: 1px solid #fff;
+  background: #4199e6;
+  box-shadow:  28px 28px 33px #285f8f, -28px -28px 33px #5ad3ff;
 }
 
 @media (prefers-reduced-motion: no-preference) {
