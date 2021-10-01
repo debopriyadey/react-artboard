@@ -10,6 +10,32 @@
   pointer-events: none;
 }
 
+.artboard-btn-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.artboard-btn {
+  position: absolute;
+  bottom: 0;
+}
+
+.artboard-close-btn {
+  position: absolute !important;
+  right: 10px;
+}
+
+.drawing-board {
+}
+
+.canvas-container {
+  height: 600px;
+  width: 1200px;
+  border: 2px solid black;
+  border-radius: 20px;
+}
+
 button {
   border: none;
   background-color: transparent;
@@ -19,30 +45,71 @@ button {
 
 textarea {
   outline: none;
-  resize: none;
+  /* resize: none; */
   border: 1px solid rgb(182, 182, 182);
+  background-color: transparent ;
 }
 
 .menu-bar {
     background-color: #1a1a1a;
     display: inline-grid;
     padding-block: 20px;
-    position: fixed;
+    position: absolute;
     top: 30%;
-    left: 20px;
+    left: 10px;
     border-radius: 20px;
     background: #4199e6;
-    box-shadow:  28px 28px 33px #285f8f, -28px -28px 33px #5ad3ff;
+    /* box-shadow:  28px 28px 33px #285f8f, -28px -28px 33px #5ad3ff; */
 }
 
 .menu-item {
-  margin-inline: 20px;
+  margin-inline: 10px;
   margin-block: 5px;
   border-radius: 8px;
   border: 1px solid #fff;
   background: #4199e6;
   box-shadow:  28px 28px 33px #285f8f, -28px -28px 33px #5ad3ff;
 }
+
+/* Notes css */
+
+.notes {
+  height: 600px;
+  width: 100%;
+  border: black 2px solid;
+  border-radius: 20px;
+}
+
+.notes-heading {
+  background-color: chocolate;
+  border-radius: 20px 20px 0px 0px;
+  padding: 5px 20px;
+}
+
+.pen-menu {
+  display: block;
+  position: absolute;
+  top: 30%;
+  left: 80px;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 10px;
+  color: #fff;
+}
+
+.pen-width {
+  display: flex;
+  margin-top: 8px;
+}
+
+.pen-width-view {
+  margin: 4px 10px;
+  padding: 8px 15px;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  width: 50px;
+}
+
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {

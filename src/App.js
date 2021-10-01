@@ -1,162 +1,94 @@
 import React, { useEffect, useState, useRef } from 'react'
 
 import { FaDownload, FaUndo, FaPenAlt } from 'react-icons/fa';
-import { IoMdColorPalette } from 'react-icons/io'
+import { IoMdCloseCircle, IoMdColorPalette } from 'react-icons/io'
+import Artboard from './artboard';
+import Notes from './notes';
 import './App.css'
+import ItemDetails from './itemDetails';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Modal from '@mui/material/Modal';
+import { IconButton } from '@mui/material';
+
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 1400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
 function App() {
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [menuItem, setMenuItem] = useState('')
-  const [position, setPosition] = useState([])
-
-  const [text, setText] = useState('')
-  const canvasRef = useRef(null);
-  const contextRef = useRef(null);
-  const canvasInput = useRef(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    canvas.width = window.innerWidth * 2;
-    canvas.height = window.innerHeight * 2;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-
-    const context = canvas.getContext("2d")
-    context.scale(2, 2);
-    context.lineCap = "round";
-    context.strokeStyle = "black";
-    context.lineWidth = 5;
-    contextRef.current = context;
-  }, [])
-
-  useEffect(() => {
-    writeText({ text: 'REACT-ARTBOARD', x: 20, y: 20 });
-  }, []);
-
-  const startDrawing = ({ nativeEvent }) => {
-    const { offsetX, offsetY } = nativeEvent;
-    contextRef.current.beginPath();
-    contextRef.current.moveTo(offsetX, offsetY);
-    setIsDrawing(true);
-  };
-
-  const finishDrawing = () => {
-    contextRef.current.closePath();
-    setIsDrawing(false);
-  };
-
-  const draw = ({ nativeEvent }) => {
-    if (!isDrawing) {
-      return;
-    }
-    const { offsetX, offsetY } = nativeEvent;
-    contextRef.current.lineTo(offsetX, offsetY);
-    contextRef.current.stroke();
-  };
-
-  const nothing = () => {
-
-  }
-
-  const getPosition = ({ nativeEvent }) => {
-    const { offsetX, offsetY } = nativeEvent;
-    setPosition([...position, {x: offsetX, y: offsetY}])
-    console.log(position)
-    // const inputText = document.createElement("textarea")
-    // canvasInput.current.appendChild(inputText)
-    // inputText.style.position = "absolute"
-    // inputText.style.left = offsetX + 'px'
-    // inputText.style.top = offsetY + 'px'
-    // let writenText = ''
-    // writeText({ text: writenText == null ? '' : writenText, x: offsetX, y: offsetY });
-  }
-
-  const selectPen = () => {
-    setMenuItem('pen')
-  }
-
-  const selectText = () => {
-    setMenuItem('text')
-  }
-
-  const selectColor = () => {
-
-  }
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d")
-    context.fillStyle = "white"
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    const removeText = document.querySelectorAll('textarea')
-    console.log(removeText)
-    removeText.forEach(element => {
-      canvasInput.current.removeChild(element)
-    });
-  }
-
-  const download = async () => {
-    const image = canvasRef.current.toDataURL('image/png');
-    const blob = await (await fetch(image)).blob();
-    const blobURL = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = blobURL;
-    link.download = "image.png";
-    link.click();
-  }
-
-  useEffect(() => {
-    menuItem == 'text' ? window.document.getElementById('canvas').style.cursor = "text" : window.document.getElementById('canvas').style.cursor = "auto"
-  }, [menuItem])
-
-  const writeText = (info, style = {}) => {
-    const { text, x, y } = info;
-    const { fontSize = 30, fontFamily = 'Arial', color = 'black', textAlign = 'left', textBaseline = 'top' } = style;
-
-    contextRef.current.beginPath();
-    contextRef.current.font = fontSize + 'px ' + fontFamily;
-    contextRef.current.textAlign = textAlign;
-    contextRef.current.textBaseline = textBaseline;
-    contextRef.current.fillStyle = color;
-    contextRef.current.fillText(text, x, y);
-    contextRef.current.stroke();
-  }
-
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   return (
-    <>
-      <div className="App" ref={canvasInput}>
-        {position.map((pos) => (
-          <textarea style={{ position: "absolute", left: `${pos.x}px`, top: `${pos.y}px` }} />
-        ))}
-        <canvas
-          id="canvas"
-          onMouseDown={menuItem == 'text' ? getPosition : startDrawing}
-          onMouseUp={menuItem == 'text' ? nothing : finishDrawing}
-          onMouseMove={menuItem == 'text' ? nothing : draw}
-          ref={canvasRef}
-        />
+    <div>
+      <div className="artboard-btn-container">
+        <Button onClick={handleOpen} variant="contained" className="artboard-btn">Item Design</Button>
+        <Modal
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        >
+          <Box sx={style}>
+            <IconButton className="artboard-close-btn">
+              <IoMdCloseCircle onClick={handleClose} />
+            </IconButton>
+            <div className="m-3">
+              <div className="row">
+                <ItemDetails />
+              </div>
+              <div className="row">
+                <div className="col-12">
+                  <Artboard />
+                </div>
+                {/* <div className="col-3">
+                  <Notes />
+                </div> */}
+              </div>
+            </div>
+          </Box>
+        </Modal>
       </div>
-      <br />
-      <div className="menu-bar">
-        <div className="menu-item">
-          <button onClick={selectPen}><FaPenAlt /></button>
-        </div>
-        <div className="menu-item">
-          <button onClick={selectText}><strong>T</strong></button>
-        </div>
-        {/* <div className="menu-item">
-          <button onClick={selectColor}><IoMdColorPalette /></button>
-        </div> */}
-        <div className="menu-item">
-          <button onClick={clearCanvas}><FaUndo /></button>
-        </div>
-        <div className="menu-item">
-          <button onClick={download}><FaDownload /></button>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
+
+// function App() {
+
+//   return (
+//     <>
+
+//       <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+//         Launch static backdrop modal
+//       </button>
+
+//       <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+//         <div className="m-3">
+//           <div className="row">
+//             <ItemDetails />
+//           </div>
+//           <div className="row">
+//             <div className="col-9">
+//               <Artboard />
+//             </div>
+//             <div className="col-3">
+//               <Notes />
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
 
 export default App;
