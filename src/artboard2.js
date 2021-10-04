@@ -1,7 +1,7 @@
 import React, { useEffect as UseEffect, useState as UseState, useRef as UseRef } from 'react'
 import { SketchPicker } from 'react-color';
 
-import { FaDownload, FaUndo, FaPenAlt, FaImages, FaEraser, FaHandPointer } from 'react-icons/fa';
+import { FaDownload, FaUndo, FaPenAlt, FaImages, FaEraser, FaHandPointer, FaCaretSquareRight } from 'react-icons/fa';
 import { IoMdColorPalette } from 'react-icons/io'
 import { ImCancelCircle } from 'react-icons/im'
 import './App.css'
@@ -71,18 +71,18 @@ const getElementAtPosition = (x, y, elements) => {
 };
 
 const adjustElementCoordinates = element => {
-    const { type, x1, y1, x2, y2 } = element;
+    const { type, x1, y1, x2, y2, image, width, height } = element;
     if (type === "img") {
         const minX = Math.min(x1, x2);
         const maxX = Math.max(x1, x2);
         const minY = Math.min(y1, y2);
         const maxY = Math.max(y1, y2);
-        return { x1: minX, y1: minY, x2: maxX, y2: maxY };
+        return { x1: minX, y1: minY, x2: maxX, y2: maxY, image, width, height };
     } else {
         if (x1 < x2 || (x1 === x2 && y1 < y2)) {
-            return { x1, y1, x2, y2 };
+            return { x1, y1, x2, y2, image, width, height };
         } else {
-            return { x1: x2, y1: y2, x2: x1, y2: y1 };
+            return { x1: x2, y1: y2, x2: x1, y2: y1, image, width, height };
         }
     }
 };
@@ -108,33 +108,36 @@ const cursorForPosition = position => {
     }
 };
 
-const resizedCoordinates = (clientX, clientY, position, coordinates) => {
-    const { x1, y1, x2, y2 } = coordinates;
+const resizedCoordinates = (offsetX, offsetY, position, x1, y1, x2, y2, widthX, heightY) => {
     switch (position) {
         case "tl":
         case "start":
-            return { x1: clientX, y1: clientY, x2, y2 };
+            return { nx1: offsetX, ny1: offsetY, nx2: x2, ny2: y2, nwidthX: x2 - offsetX, nheightY: y2 - offsetY };
         case "tr":
-            return { x1, y1: clientY, x2: clientX, y2 };
+            return { nx1: x1, ny1: offsetY, nx2: offsetX, ny2: y2, nwidthX: offsetX - x1, nheightY: y2 - offsetY };
         case "bl":
-            return { x1: clientX, y1, x2, y2: clientY };
+            return { nx1: offsetX, ny1: y1, nx2: x2, ny2: offsetY, nwidthX: x2 - offsetX, nheightY: offsetY - x1 };
         case "br":
         case "end":
-            return { x1, y1, x2: clientX, y2: clientY };
+            return { nx1: x1, ny1: y1, nx2: offsetX, ny2: offsetY, nwidthX: offsetX, heightY: offsetY };
         case "t":
-            return { x1, y1: clientY, x2, y2 };
+            return { nx1: x1, ny1: offsetY, nx2: x2, ny2: y2, nwidthX: widthX, nheightY: y2 - offsetY };
         case "r":
-            return { x1, y1, x2: clientX, y2 };
+            return { nx1: x1, ny1: y1, nx2: offsetX, ny2: y2, nwidthX: offsetX - x1, nheightY: heightY };
         case "b":
-            return { x1, y1, x2, y2: clientY };
+            return { nx1: x1, ny1: y1, nx2: x2, ny2: offsetY, nwidthX: widthX, nheightY: offsetY - y1 };
         case "l":
-            return { x1: clientX, y1, x2, y2 };
+            return { nx1: offsetX, ny1: y1, nx2: x2, ny2: y2, nwidthX: x2 - offsetX, nheightY: heightY };
         default:
             return null; //should not really get here...
     }
 };
 
 export default function artboard() {
+
+    let restoreArray = []
+    let arrayIndex = -1
+
     const [isDrawing, setIsDrawing] = UseState(false)
     const [menuItem, setMenuItem] = UseState('')
     const [position, setPosition] = UseState([])
@@ -150,7 +153,8 @@ export default function artboard() {
     const [tool, setTool] = UseState("line");
     const [action, setAction] = UseState("none");
     const [selectedElement, setSelectedElement] = UseState(null);
-
+    const [penOpen, setPenOpen] = UseState(false)
+    const [eraseOpen, setEraseOpen] = UseState(false)
     const canvasRef = UseRef(null);
     const contextRef = UseRef(null);
     const canvasInput = UseRef(null)
@@ -165,21 +169,27 @@ export default function artboard() {
         context.scale(2, 2);
         context.lineCap = "round";
         contextRef.current = context;
-    }, [])
 
-    const createElement = (id, x1, y1, x2, y2, type) => {
-        // contextRef.current.drawImage(id, x1, y1, x2, y2, type);
-        return { id, x1, y1, x2, y2, type };
+        elements.forEach((imageElement) => {
+            const { image, x1, y1, widthX, heightY } = imageElement
+            contextRef.current.drawImage(image, x1, y1, widthX, heightY);
+        });
+    }, [elements])
+
+    const createElement = (id, x1, y1, x2, y2, type, image, widthX, heightY) => {
+        clearCanvas()
+        contextRef.current.drawImage(image, x1, y1, widthX, heightY);
+        return { id, x1, y1, x2, y2, type, image, widthX, heightY };
     }
 
-    const updateElement = (id, x1, y1, x2, y2, type) => {
-        const updatedElement = createElement(id, x1, y1, x2, y2, type);
-
+    const updateElement = (id, x1, y1, x2, y2, type, image, widthX, heightY) => {
+        console.log("updating element")
+        const updatedElement = createElement(id, x1, y1, x2, y2, type, image, widthX, heightY);
+        console.log(updatedElement)
         const elementsCopy = [...elements];
         elementsCopy[id] = updatedElement;
         setElements(elementsCopy);
     };
-
 
     UseEffect(() => {
         contextRef.current.strokeStyle = pencil.color;
@@ -191,15 +201,13 @@ export default function artboard() {
     }, []);
 
     const startDrawing = ({ nativeEvent }) => {
-        const { clientX, clientY } = nativeEvent;
+        const { offsetX, offsetY } = nativeEvent;
         if (tool === "selection") {
-            console.log("inside selection")
-            const element = getElementAtPosition(clientX, clientY, elements);
-            console.log(element)
+            const element = getElementAtPosition(offsetX, offsetY, elements);
             if (element) {
-                const offsetX = clientX - element.x1;
-                const offsetY = clientY - element.y1;
-                setSelectedElement({ ...element, offsetX, offsetY });
+                const clientX = offsetX - element.x1;
+                const clientY = offsetY - element.y1;
+                setSelectedElement({ ...element, clientX, clientY });
 
                 if (element.position === "inside") {
                     setAction("moving");
@@ -209,65 +217,75 @@ export default function artboard() {
             }
         } else {
             contextRef.current.beginPath();
-            contextRef.current.moveTo(clientX, clientY);
+            contextRef.current.moveTo(offsetX, offsetY);
             setIsDrawing(true);
         }
     };
 
-    const finishDrawing = () => {
-        if (selectedElement) {
-            const index = selectedElement.id;
-            const { id, type } = elements[index];
-            if (action === "drawing" || action === "resizing") {
-                const { x1, y1, x2, y2 } = adjustElementCoordinates(elements[index]);
-                updateElement(id, x1, y1, x2, y2, type);
-            }
-        }
-        setAction("none");
-        setSelectedElement(null);
-        contextRef.current.closePath();
-        setIsDrawing(false);
-    };
-
     const draw = ({ nativeEvent }) => {
 
-        const { clientX, clientY } = nativeEvent;
+        const { offsetX, offsetY } = nativeEvent;
         if (tool === "selection") {
-            const element = getElementAtPosition(clientX, clientY, elements);
+            const element = getElementAtPosition(offsetX, offsetY, elements);
+            console.log("selected element : ", element)
             nativeEvent.target.style.cursor = element ? cursorForPosition(element.position) : "default";
+        }
+
+        if (action === "moving") {
+            const { id, x1, x2, y1, y2, type, clientX, clientY, image, widthX, heightY } = selectedElement;
+            const width = x2 - x1;
+            const height = y2 - y1;
+            const newX1 = offsetX - clientX;
+            const newY1 = offsetY - clientY;
+            console.log("moving : ", id, newX1, newY1, newX1 + width, newY1 + height, type, image, widthX, heightY)
+            updateElement(id, newX1, newY1, newX1 + width, newY1 + height, type, image, widthX, heightY);
+        } else if (action === "resizing") {
+            const { id, type, position, x1, y1, x2, y2, image, widthX, heightY } = selectedElement;
+            console.log("selected values", id, type, position, x1, y1, x2, y2, image, widthX, heightY)
+            const { nx1, ny1, nx2, ny2, nwidthX, nheightY } = resizedCoordinates(offsetX, offsetY, position, x1, y1, x2, y2, widthX, heightY);
+            console.log("selected return values", nx1, ny1, nx2, ny2, nwidthX, nheightY)
+            updateElement(id, nx1, ny1, nx2, ny2, type, image, nwidthX, nheightY);
+            console.log("resizing")
         }
 
         if (!isDrawing) {
             return;
         }
-        contextRef.current.lineTo(clientX, clientY);
+        contextRef.current.lineTo(offsetX, offsetY);
         contextRef.current.stroke();
 
-        if (action === "drawing") {
-            const index = elements.length - 1;
-            const { x1, y1 } = elements[index];
-            updateElement(index, x1, y1, clientX, clientY, tool);
-        } else if (action === "moving") {
-            const { id, x1, x2, y1, y2, type, offsetX, offsetY } = selectedElement;
-            const width = x2 - x1;
-            const height = y2 - y1;
-            const newX1 = clientX - offsetX;
-            const newY1 = clientY - offsetY;
-            updateElement(id, newX1, newY1, newX1 + width, newY1 + height, type);
-        } else if (action === "resizing") {
-            const { id, type, position, ...coordinates } = selectedElement;
-            const { x1, y1, x2, y2 } = resizedCoordinates(clientX, clientY, position, coordinates);
-            updateElement(id, x1, y1, x2, y2, type);
-        }
     };
+
+    const finishDrawing = () => {
+        const canvas = canvasRef.current;
+
+        // if (selectedElement) {
+        //     const index = selectedElement.id;
+        //     const { id, type } = elements[index];
+        //     if (action === "drawing" || action === "resizing") {
+        //         const { x1, y1, x2, y2, image, widthX, heightY } = adjustElementCoordinates(elements[index]);
+        //         updateElement(id, x1, y1, x2, y2, type, image, widthX, heightY);
+        //     }
+        // }
+
+        setAction("none");
+        setSelectedElement(null);
+        contextRef.current.closePath();
+        console.log(canvas.height, canvas.width)
+        restoreArray.push(contextRef.current.getImageData(0, 0, canvas.width, canvas.height))
+        arrayIndex += 1
+        console.log("restoreArray ", restoreArray)
+        setIsDrawing(false);
+    };
+
 
     const nothing = () => {
 
     }
 
     const getPosition = ({ nativeEvent }) => {
-        const { clientX, clientY} = nativeEvent;
-        setPosition([...position, { x: clientX, y: clientY }])
+        const { offsetX, offsetY } = nativeEvent;
+        setPosition([...position, { x: offsetX, y: offsetY }])
         console.log(position)
         // const inputText = document.createElement("textarea")
         // canvasInput.current.appendChild(inputText)
@@ -280,6 +298,13 @@ export default function artboard() {
 
     const selectPen = () => {
         setMenuItem('pen')
+        setTool('line')
+
+        const pencilMore = document.getElementById('pencil')
+        const eraserMore = document.getElementById('eraser')
+        pencilMore.style.display = "block"
+        eraserMore.style.display = "none"
+
         setPencil({ ...pencil, color: 'black', width: '1' })
     }
 
@@ -302,10 +327,10 @@ export default function artboard() {
             console.log(myImage)
             myImage.onload = () => {
                 const id = elements.length;
-                const element = createElement(id, 100, 100, myImage.width * 0.5 + 100, myImage.height * 0.5 + 100, "img");
+                const element = createElement(id, 100, 100, myImage.width * 0.5 + 100, myImage.height * 0.5 + 100, "img", myImage, myImage.width * 0.5, myImage.height * 0.5);
                 setElements(prevState => [...prevState, element]);
                 setSelectedElement(element);
-                contextRef.current.drawImage(myImage, 100, 100, myImage.width * 0.5, myImage.height * 0.5); // Draws the image on canvas
+                // contextRef.current.drawImage(myImage, 100, 100, myImage.width * 0.5, myImage.height * 0.5); // Draws the image on canvas
                 // let imgData = contextRef.current.toDataURL("image/jpeg", 0.75);
             }
         }
@@ -313,6 +338,10 @@ export default function artboard() {
 
     const selectErase = () => {
         setPencil({ ...pencil, color: 'white', width: '5' })
+        const pencilMore = document.getElementById('pencil')
+        const eraserMore = document.getElementById('eraser')
+        pencilMore.style.display = "none"
+        eraserMore.style.display = "block"
     }
 
     const clearCanvas = () => {
@@ -347,7 +376,6 @@ export default function artboard() {
     const handleOpenI = () => setOpenI(true);
     const handleCloseI = () => setOpenI(false);
 
-
     UseEffect(() => {
         menuItem == 'text' ? window.document.getElementById('canvas').style.cursor = "text" : window.document.getElementById('canvas').style.cursor = "crosshair"
     }, [menuItem])
@@ -365,7 +393,7 @@ export default function artboard() {
         contextRef.current.stroke();
     }
 
-    console.log(elements)
+    console.log(selectedElement)
 
     return (
         <>
@@ -375,7 +403,7 @@ export default function artboard() {
                 ))}
                 <div className="canvas-container">
                     <canvas
-                        
+
                         className="drawing-board"
                         id="canvas"
                         onMouseDown={menuItem == 'text' ? getPosition : startDrawing}
@@ -386,22 +414,42 @@ export default function artboard() {
                 </div>
             </div>
             <br />
-            <div className="pen-menu" style={{ display: 'none' }}>
-                <SketchPicker
-                    color={pencil.color}
-                    onChangeComplete={handleChangeComplete}
-                />
-                <div className="pen-width">
-                    <p className="pen-width-view">{pencil.width}</p>
-                    <input
-                        id="typeinp"
-                        type="range"
-                        min="0"
-                        max="10"
-                        step="0.5"
-                        defaultValue="3"
-                        onChange={(e) => setPencil({ ...pencil, width: e.target.value })}
+            <div className="pen-style-open" id="pencil">
+                <FaCaretSquareRight onClick={() => setPenOpen(!penOpen)} />
+                <div className={penOpen ? "pen-menu-open" : "pen-menu-close"}>
+                    <SketchPicker
+                        color={pencil.color}
+                        onChangeComplete={handleChangeComplete}
                     />
+                    <div className="pen-width">
+                        <p className="pen-width-view">{pencil.width}</p>
+                        <input
+                            id="typeinp"
+                            type="range"
+                            min="0"
+                            max="10"
+                            step="0.5"
+                            defaultValue="3"
+                            onChange={(e) => setPencil({ ...pencil, width: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="erase-style-open" id="eraser">
+                <FaCaretSquareRight onClick={() => setEraseOpen(!eraseOpen)} />
+                <div className={eraseOpen ? "pen-menu-open" : "pen-menu-close"}>
+                    <div className="pen-width">
+                        <p className="pen-width-view">{pencil.width}</p>
+                        <input
+                            id="typeinp"
+                            type="range"
+                            min="0"
+                            max="20"
+                            step="2"
+                            defaultValue="6"
+                            onChange={(e) => setPencil({ ...pencil, width: e.target.value })}
+                        />
+                    </div>
                 </div>
             </div>
             <div className="menu-bar">

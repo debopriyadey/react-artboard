@@ -86,15 +86,34 @@ textarea {
   padding: 5px 20px;
 }
 
-.pen-menu {
+.pen-style-open {
   display: block;
   position: absolute;
-  top: 30%;
-  left: 80px;
+  top: 41%;
+  left: 70px;
+}
+
+.erase-style-open {
+  display: none;
+  position: absolute;
+  top: 54%;
+  left: 70px;
+}
+
+.pen-menu-close {
   background-color: #1a1a1a;
   border-radius: 10px;
   padding: 10px;
   color: #fff;
+  display: none;
+}
+
+.pen-menu-open {
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 10px;
+  color: #fff;
+  display: block;
 }
 
 .pen-width {

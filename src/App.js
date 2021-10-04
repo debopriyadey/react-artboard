@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { FaDownload, FaUndo, FaPenAlt } from 'react-icons/fa';
 import { IoMdCloseCircle, IoMdColorPalette } from 'react-icons/io'
 import Artboard from './artboard';
+import Artboard2 from './artboard2';
 import Notes from './notes';
 import './App.css'
 import ItemDetails from './itemDetails';
@@ -49,7 +50,7 @@ function App() {
               </div>
               <div className="row">
                 <div className="col-12">
-                  <Artboard />
+                  <Artboard2 />
                 </div>
                 {/* <div className="col-3">
                   <Notes />
